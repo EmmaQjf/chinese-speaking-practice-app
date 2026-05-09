@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type RegisterResult =
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const form = event.currentTarget;
     event.preventDefault();
     setResult(null);
     setIsSubmitting(true);
@@ -30,11 +32,25 @@ export default function RegisterPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = (await response.json()) as { ok?: boolean; message?: string };
-      if (!response.ok || !data.ok) {
+       //response is the raw HTTP response object from the server (status code, headers, body stream). data is the parsed JSON body extracted from that response.
+
+
+       const raw = await response.text();
+       let data: { ok?: boolean; message?: string } | null = null;
+       try {
+         data = raw ? (JSON.parse(raw) as { ok?: boolean; message?: string }) : null;
+       } catch {
+         setResult({
+           ok: false,
+           message: `Server returned non-JSON (status ${response.status}). First bytes: ${raw.slice(0, 120)}`,
+         });
+         return;
+       }
+     
+      if (!response.ok || !data?.ok) {
         setResult({
           ok: false,
-          message: data.message ?? "Registration failed. Please check your inputs.",
+          message: data?.message ?? "Registration failed. Please check your inputs.",
         });
         return;
       }
@@ -43,8 +59,11 @@ export default function RegisterPage() {
         ok: true,
         message: data.message ?? "Success",
       });
-      event.currentTarget.reset();
+      form.reset();
+      // event.currentTarget.reset();
     } catch {
+      //response.ok = "Server talked back, but mad at you"
+       //catch = "Server never answered at all"
       setResult({
         ok: false,
         message: "Network error. Check your dev server and try again.",
@@ -145,6 +164,13 @@ export default function RegisterPage() {
               {result.message}
             </p>
           )}
+
+          <p className="text-center text-sm text-zinc-600">
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium text-zinc-900 underline">
+              Log in
+            </Link>
+          </p>
         </form>
       </main>
     </div>

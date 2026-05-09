@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -8,16 +11,22 @@ const registerSchema = z.object({
   role: z.enum(["teacher", "student"]),
 });
 
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: unknown }).code === 11000
+  );
+}
+
 /**
- * Phase 1 Step 1.3:
- * Validate request data and return JSON.
- * In Step 1.4 we will save the user in MongoDB.
+ * Phase 1 Step 1.4: validate, hash password, save user to MongoDB.
  */
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
     const parsed = registerSchema.safeParse(body);
-    // check whether the data match the registerSchema 
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -26,21 +35,49 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, role } = parsed.data;
-    //parsed.data contains clean, typed, validated data
-    //NextResponse.json-Converts a JavaScript object to JSON.Sets correct HTTP headers,Returns an HTTP response object
+    const { name, email, password, role } = parsed.data;
+    const emailNorm = email.toLowerCase();
+
+    await connectDB();
+
+    const existing = await User.findOne({ email: emailNorm });
+    if (existing) {
+      return NextResponse.json(
+        { ok: false, message: "An account with that email already exists." },
+        { status: 400 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await User.create({
+      email: emailNorm,
+      name: name.trim(),
+      passwordHash,
+      role,
+    });
+
     return NextResponse.json(
       {
         ok: true,
-        message: "Validation passed. Database save comes in Step 1.4.",
-        userPreview: { name, email: email.toLowerCase(), role },
+        message: "Account created. You can log in after we wire up login (Step 1.5).",
+        userPreview: { name: name.trim(), email: emailNorm, role },
       },
-      { status: 200 }
+      { status: 201 }
     );
-  } catch {
-    return NextResponse.json(
-      { ok: false, message: "Invalid JSON body" },
-      { status: 400 }
-    );
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      return NextResponse.json(
+        { ok: false, message: "An account with that email already exists." },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("MONGODB_URI")) {
+      return NextResponse.json(
+        { ok: false, message: error.message },
+        { status: 503 }
+      );
+    }
+    console.error("POST /api/register", error);
+    return NextResponse.json({ ok: false, message: "Server error. Try again later." }, { status: 500 });
   }
 }
