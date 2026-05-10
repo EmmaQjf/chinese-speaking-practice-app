@@ -1,12 +1,13 @@
 import {
-  Schema,
-  model,
-  models,
-  type Document,
-  type Model,
-  type Types,
+  Schema,//Used to define the structure of data
+  model, //Creates a database model
+  models,//Holds already-created models
+  type Document, //Base type for MongoDB documents
+  type Model, //Type for a Mongoose model
+  type Types, //MongoDB types (like ObjectId)
 } from "mongoose";
 
+//“A Class document will have these fields.”
 export interface ClassDoc extends Document {
   name: string;
   joinCode: string;
@@ -26,7 +27,7 @@ const classSchema = new Schema<ClassDoc>(
       maxlength: 16,
     },
     teacherId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,//ObjectId allows relational-like references.
       ref: "User",
       required: true,
       index: true,
