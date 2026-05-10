@@ -23,6 +23,7 @@ export const authOptions: NextAuthOptions = {
 
         await connectDB();
         const user = await User.findOne({ email }).select("+passwordHash");
+        //include hidden password field
         if (!user?.passwordHash) return null;
 
         const ok = await bcrypt.compare(password, user.passwordHash);
@@ -48,6 +49,7 @@ export const authOptions: NextAuthOptions = {
     //**session()**: "Give id + role to Ana's app" (browser can see)
 
     //our app: useSession() → "Ana is teacher #123! Show teacher dashboard"
+    //This code stores the user’s ID and role in a token so the app can remember them after login.
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -56,6 +58,7 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.id as string) ?? "";

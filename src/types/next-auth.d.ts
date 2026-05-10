@@ -7,7 +7,7 @@ import type { UserRole } from "@/models/User";
 //You are not changing NextAuth’s code.You are extending its types.
 declare module "next-auth" {
   interface Session {
-    //DefaultSession-Take the original NextAuth user fields.”name,email,image
+    //DefaultSession-Take the original NextAuth user fields.”name,email,image means “AND ALSO ADD THESE”
     user: DefaultSession["user"] & {
       id: string;
       role: UserRole;

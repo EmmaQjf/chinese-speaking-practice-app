@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";//NextResponse is how you send a response back to the browserUsed in Next.js API routes (server-side)
 import bcrypt from "bcryptjs";
-import { z } from "zod";
+import { z } from "zod"; //A data validation library It checks if user input is correct BEFORE using it
 import connectDB from "@/lib/mongodb";
-import User from "@/models/User";
+import User from "@/models/User"; //This represents your users collection in MongoDB
+// Lets you:
+// find users
+// create users
+// update users
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -26,7 +30,7 @@ function isDuplicateKeyError(error: unknown): boolean {
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
-    const parsed = registerSchema.safeParse(body);
+    const parsed = registerSchema.safeParse(body);//Checks if user input matches rules
 
     if (!parsed.success) {
       return NextResponse.json(

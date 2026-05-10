@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+// “My cache object has:
+// conn: the actual database connection (or null)
+// promise: a connection-in-progress (or null)”
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
