@@ -1,5 +1,5 @@
 "use client";
-
+//NextAuth is a library that handles login, sessions, and user authentication so you don’t have to build security systems yourself.
 import { signOut } from "next-auth/react";
 
 export function SignOutButton() {
