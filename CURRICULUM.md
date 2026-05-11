@@ -20,7 +20,7 @@ This document is the agreed build plan for **Chinese Speaking Scenarios** (`chin
 
 ### Next step
 
-Start with **Phase 2.4** (teacher class form on `/dashboard`). Build in order; each step reuses patterns from Phase 1 (Mongoose model, Zod, `fetch`, session).
+Start with **Phase 2.5** (`POST /api/classes/join`). Build in order; each step reuses patterns from Phase 1 (Mongoose model, Zod, `fetch`, session).
 
 ---
 
@@ -40,7 +40,7 @@ Work through these in order. Check **Done?** when it works end-to-end (including
 | **2.1** | **Design + `Class` model** — fields e.g. `name`, `joinCode` (unique string), `teacherId` (ObjectId ref to `User`), `timestamps`. Export model like `User` (`models.Class ?? model(...)`). | How to model a *resource* that belongs to a user; `Schema.Types.ObjectId` + `ref: "User"`; why `joinCode` is `unique: true`. | Done |
 | **2.2** | **`ClassMembership` model** (recommended) — `classId`, `userId`, maybe `roleInClass` (`teacher` \| `student`), unique compound index on `(classId, userId)` so a user can’t join twice. *Alternative:* store `memberIds` array on `Class` (simpler at first, harder to query at scale). | Many-to-many: users ↔ classes; indexes for fast lookups and no duplicates. | Done |
 | **2.3** | **Teacher creates class — API only** — `POST /api/classes` (or `app/api/classes/route.ts`). Parse JSON body (`name`). Use **`getServerSession(authOptions)`** to require login; if `session.user.role !== "teacher"`, return 403. Generate a **short random join code** (e.g. 6–8 chars, avoid ambiguous `0`/`O` if you like), ensure uniqueness (retry or loop). Create `Class` with `teacherId: session.user.id`. Optionally **auto-create** a `ClassMembership` row for the teacher so “my classes” queries stay uniform. | Route handlers in App Router; **auth on the server**; separating “who can call this” from “what we save”. | Done |
-| **2.4** | **Teacher UI** — On `/dashboard`, if role is teacher, show a small form: class name → `fetch` `POST /api/classes` → show success + **join code** (copy button is a nice touch). Handle JSON errors (400/403) like on register. | Conditional UI by role; calling your own API from the client with cookies (session). | |
+| **2.4** | **Teacher UI** — On `/dashboard`, if role is teacher, show a small form: class name → `fetch` `POST /api/classes` → show success + **join code** (copy button is a nice touch). Handle JSON errors (400/403) like on register. | Conditional UI by role; calling your own API from the client with cookies (session). | Done |
 | **2.5** | **Student joins — API** — `POST /api/classes/join` with body `{ code }` (normalize: trim, uppercase). Find `Class` by `joinCode`. If missing → 404. If user already in `ClassMembership` for that class → 200 or 409 (your choice). Else insert membership for `session.user.id`. **Never** trust client for `classId` from code alone without verifying the code exists. | **Lookup by code**, not by id; idempotent joins. | |
 | **2.6** | **Student UI** — On `/dashboard`, if role is student: input for join code + submit → `POST /api/classes/join` → toast or message “Joined!” | Same client pattern as 2.4; different API. | |
 | **2.7** | **List “my classes”** — `GET /api/classes` (or `/api/me/classes`): **Teachers:** classes where `teacherId === session.user.id`. **Students:** classes where they have a `ClassMembership`. Return JSON array `{ id, name, joinCode?, role }`. | One endpoint, **branch on role**; Mongo queries with `$in` or populate. | |
