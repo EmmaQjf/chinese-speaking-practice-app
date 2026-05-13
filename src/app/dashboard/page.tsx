@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { SignOutButton } from "@/components/SignOutButton";
+import { StudentJoinClassForm } from "@/components/StudentJoinClassForm";
 import { TeacherCreateClassForm } from "@/components/TeacherCreateClassForm";
 
 export default async function DashboardPage() {
@@ -10,7 +11,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto flex min-h-full max-w-2xl flex-col gap-6 px-4 py-12">
       <header>
-        <p className="text-sm font-medium text-zinc-500">Phase 2 — Step 2.4</p>
+        <p className="text-sm font-medium text-zinc-500">Phase 2 — Step 2.6</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
           Dashboard
         </h1>
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
       </section>
 
       {session?.user?.role === "teacher" ? <TeacherCreateClassForm /> : null}
+      {session?.user?.role === "student" ? <StudentJoinClassForm /> : null}
 
       <div className="flex flex-wrap gap-3">
         <SignOutButton />

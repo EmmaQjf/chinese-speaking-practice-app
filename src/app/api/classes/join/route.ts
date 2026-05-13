@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         { status: 403 }// not authorized 
       );
     }
+    //Types.ObjectId.isValid(value)-- “Is this value a valid MongoDB ObjectId format?”
     if (!Types.ObjectId.isValid(session.user.id)) {
       return NextResponse.json({ ok: false, message: "Invalid session." }, { status: 401 });
       //The request reached the server, but👉 you are not authenticated.
@@ -56,16 +57,19 @@ export async function POST(request: Request) {
     await connectDB();
   //?
     const userId = new Types.ObjectId(session.user.id);
+//     Converts session.user.id (string) → MongoDB ObjectId
+// Necessary because MongoDB stores _id as ObjectId, not strings
     const joinCode = parsed.data.code;
   // deal with wrong join id 
     const classDoc = await Class.findOne({ joinCode }).lean();
+    //lean() So instead of getting a Mongoose Document, you get a plain JavaScript object
     if (!classDoc) {
       return NextResponse.json(
         { ok: false, message: "No class found with that join code." },
         { status: 404 } //not found 
       );
     }
-
+  // whether this student has already joined the class 
     const classId = classDoc._id as Types.ObjectId;
 
     const existing = await ClassMembership.findOne({ classId, userId }).lean();
