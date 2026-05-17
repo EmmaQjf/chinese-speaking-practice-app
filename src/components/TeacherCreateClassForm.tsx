@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { notifyClassesChanged } from "@/components/MyClassesList";
 
 //This code defines the two possible outcomes of creating a class: either it succeeds (with a join code) or it fails (with an error message).
 type CreateClassResult =
@@ -81,6 +82,7 @@ export function TeacherCreateClassForm() {
         joinCode,
       });
       form.reset();
+      notifyClassesChanged();
     } catch {
       setResult({
         ok: false,

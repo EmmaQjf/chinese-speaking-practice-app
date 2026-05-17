@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { notifyClassesChanged } from "@/components/MyClassesList";
 
 type JoinResult =
   | { ok: true; message: string; className?: string }
@@ -58,6 +59,7 @@ export function StudentJoinClassForm() {
         className: data.class?.name,
       });
       form.reset();
+      notifyClassesChanged();
     } catch {
       setResult({
         ok: false,

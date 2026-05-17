@@ -20,7 +20,7 @@ This document is the agreed build plan for **Chinese Speaking Scenarios** (`chin
 
 ### Next step
 
-Start with **Phase 2.8** (dashboard class list — `GET /api/classes`). Build in order; each step reuses patterns from Phase 1 (Mongoose model, Zod, `fetch`, session).
+Start with **Phase 2.9** (`assertClassAccess` + enforce on class-scoped APIs). Build in order; each step reuses patterns from Phase 1 (Mongoose model, Zod, `fetch`, session).
 
 ---
 
@@ -44,7 +44,7 @@ Work through these in order. Check **Done?** when it works end-to-end (including
 | **2.5** | **Student joins — API** — `POST /api/classes/join` with body `{ code }` (normalize: trim, uppercase). Find `Class` by `joinCode`. If missing → 404. If user already in `ClassMembership` for that class → 200 or 409 (your choice). Else insert membership for `session.user.id`. **Never** trust client for `classId` from code alone without verifying the code exists. | **Lookup by code**, not by id; idempotent joins. | Done |
 | **2.6** | **Student UI** — On `/dashboard`, if role is student: input for join code + submit → `POST /api/classes/join` → toast or message “Joined!” | Same client pattern as 2.4; different API. | Done |
 | **2.7** | **List “my classes”** — `GET /api/classes` (or `/api/me/classes`): **Teachers:** classes where `teacherId === session.user.id`. **Students:** classes where they have a `ClassMembership`. Return JSON array `{ id, name, joinCode?, role }`. | One endpoint, **branch on role**; Mongo queries with `$in` or populate. | Done |
-| **2.8** | **Dashboard list** — After login, call `GET` and render a simple list (links to `/classes/[id]` placeholder page optional). Empty state: “No classes yet.” | Loading state + empty state UX. | |
+| **2.8** | **Dashboard list** — After login, call `GET` and render a simple list (links to `/classes/[id]` placeholder page optional). Empty state: “No classes yet.” | Loading state + empty state UX. | Done |
 | **2.9** | **Access rule (enforcement)** — For any future route that loads **class-specific** data (e.g. `GET /api/classes/[id]/...`): load class, then check **teacher owns it OR user has membership**. If not → **403**. Add a tiny helper e.g. `assertClassAccess(userId, role, classId)` to reuse everywhere. | **Defense in depth**: middleware protects `/dashboard`; **per-resource** checks protect data. | |
 
 **Concepts map (Phase 1 → Phase 2):**
