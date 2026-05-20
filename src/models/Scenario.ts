@@ -6,13 +6,13 @@ import {
   type Model,
   type Types,
 } from "mongoose";
+import { SCENARIO_LEVEL_IDS, type ScenarioLevel } from "@/lib/scenarioLevels";
 import { TOPICS, type TopicId } from "@/lib/topics";
 
-/** Speaking difficulty / course level (refined in lib/scenarioLevels.ts in step 3.2). */
-export type ScenarioLevel = "1" | "2" | "3";
+export type { ScenarioLevel } from "@/lib/scenarioLevels";
 
 const TOPIC_IDS = TOPICS.map((t) => t.id);
-
+//“ScenarioDoc describes the shape of data (TypeScript only).A Scenario document should look like this.”
 export interface ScenarioDoc extends Document {
   classId: Types.ObjectId;
   topicId: TopicId;
@@ -20,7 +20,7 @@ export interface ScenarioDoc extends Document {
   promptEnglish: string;
   createdBy?: Types.ObjectId;
 }
-
+//“Only save documents that match these rules.”
 const scenarioSchema = new Schema<ScenarioDoc>(
   {
     classId: {
@@ -37,7 +37,7 @@ const scenarioSchema = new Schema<ScenarioDoc>(
     level: {
       type: String,
       required: true,
-      enum: ["1", "2", "3"],
+      enum: SCENARIO_LEVEL_IDS,
     },
     promptEnglish: {
       type: String,
