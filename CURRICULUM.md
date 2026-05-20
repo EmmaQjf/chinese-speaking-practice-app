@@ -20,7 +20,7 @@ This document is the agreed build plan for **Chinese Speaking Scenarios** (`chin
 
 ### Next step
 
-**Phase 2 complete.** Start **Phase 3** (topics + scenarios — horizontal topic strip, scenario cards, teacher create scenario API).
+**Phase 2 complete.** Start with **Phase 3.1** (`Scenario` model). Build in order; reuse `assertClassAccess`, `TOPICS` from `src/lib/topics.ts`, and patterns from Phase 2.
 
 ---
 
@@ -67,6 +67,59 @@ Work through these in order. Check **Done?** when it works end-to-end (including
 - Level stays on each scenario (teacher sets it); show as badge on cards  
 - **Teacher:** create scenario (class, topic, level, English prompt)  
 - **API:** list scenarios filtered by `classId` + topic  
+
+**Already in the repo:** `src/lib/topics.ts` (`TOPICS`, `TopicId`, `isTopicId`); home page topic strip preview (not clickable). **Class page** (`/classes/[id]`) has `assertClassAccess` — scenarios live there next.
+
+### Phase 3 — Step-by-step (learn as you build)
+
+Work through these in order. Check **Done?** when it works end-to-end.
+
+| Substep | What you build | What you learn | Done? |
+|--------|----------------|----------------|-------|
+| **3.1** | **`Scenario` model** — e.g. `classId` (ref `Class`), `topicId` (string matching `TopicId` from `topics.ts`), `level` (enum), `promptEnglish` (string), optional `createdBy` (ref `User`). `timestamps`. Index on `(classId, topicId)` for fast filtering. | Resource **belongs to a class**; store stable **topic id**, show **label** in UI. | |
+| **3.2** | **Level constants** — e.g. `SCENARIO_LEVELS` in `lib/scenarioLevels.ts` (or enum on schema): `"1"` \| `"2"` \| `"3"` or `beginner` \| `intermediate` \| `advanced`. Export type + `isScenarioLevel()`. | Allowed values / enums; same idea as `User.role` and `TopicId`. | |
+| **3.3** | **`POST /api/classes/[classId]/scenarios`** — Teacher only. `assertClassAccess` then require teacher (owner or `roleInClass === "teacher"`). Zod: `{ topicId, level, promptEnglish }`. Validate `topicId` with `isTopicId()`. `Scenario.create(...)`. Return `{ ok, scenario: { id, ... } }`. | Nested routes; reuse **access helper**; Zod + domain validation. | |
+| **3.4** | **`GET /api/classes/[classId]/scenarios?topic=daily_life`** — Any **class member** (`assertClassAccess`). `Scenario.find({ classId, topicId })`. Return `{ ok, scenarios: [...] }`. **400** if `topic` missing/invalid. | **Query params**; filter by topic; members read, teachers write. | |
+| **3.5** | **Teacher UI — create scenario** — On `/classes/[id]`, if teacher: form with topic (select from `TOPICS`), level (select), English prompt (textarea). `fetch` → `POST` from 3.3. Success/error like create-class form. | Form → API; teacher-only block on class page. | |
+| **3.6** | **`TopicStrip` component** (client) — Horizontal pills from `TOPICS`. Click sets `selectedTopicId`; highlight active. Buttons (not static spans). Reuse home page styling. | Client state; controlled selection; reusable UI. | |
+| **3.7** | **`ScenarioList` component** (client) — When `classId` + `selectedTopicId` set, `fetch` `GET .../scenarios?topic=...`. Loading / error / empty (“No scenarios for this topic yet.”). **Cards** with prompt snippet + **level badge**. | `useEffect` + fetch; list UI; badges. | |
+| **3.8** | **Wire class page** — On `/classes/[id]` (after access check): `TopicStrip` + `ScenarioList` for teachers and students. Teachers also see create form (3.5). Default topic = first in `TOPICS`. | Compose components; one page, multiple roles. | |
+| **3.9** | **Polish** — Optional link on each card to `/classes/[classId]/scenarios/[scenarioId]` placeholder (Phase 4). Truncate long prompts. Re-fetch list after teacher creates (event or `router.refresh()`). | UX polish; prep for Phase 4 detail + recording. | |
+
+**Data model sketch (3.1):**
+
+```text
+Scenario
+  classId       → Class
+  topicId       → "daily_life" | "health" | ...  (from TOPICS, not free text)
+  level         → e.g. "1" | "2" | "3"
+  promptEnglish → "Describe your morning routine..."
+  createdBy?    → User (optional)
+```
+
+**Flow on `/classes/[classId]`:**
+
+```text
+assertClassAccess
+  ├── Teacher: CreateScenarioForm → POST .../scenarios
+  ├── TopicStrip → selectedTopicId
+  └── ScenarioList → GET .../scenarios?topic=...
+```
+
+**Concepts map (Phase 2 → Phase 3):**
+
+| You already used (Phase 2) | You’ll extend (Phase 3) |
+|---------------------------|-------------------------|
+| `Class` model | `Scenario` belongs to **one class** |
+| `assertClassAccess` | Every scenario route checks class access first |
+| `POST /api/classes` + Zod | `POST .../scenarios` + Zod + `isTopicId` |
+| `MyClassesList` + fetch | `ScenarioList` + fetch with **query param** |
+| `TeacherCreateClassForm` | Teacher **create scenario** form |
+| Home topic preview (static) | **Clickable** `TopicStrip` on class page |
+
+**Suggested first commit-sized goals:** **3.1 → 3.4** (model + APIs, test with curl/DevTools). Then **3.5** (teacher create). Then **3.6 → 3.9** (topic strip + cards on class page).
+
+**Out of scope for Phase 3 (later phases):** recording audio, saving **responses**, scenario detail with mic (Phase 4), comments (5), AI hints (6).
 
 ---
 
