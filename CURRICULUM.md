@@ -20,7 +20,7 @@ This document is the agreed build plan for **Chinese Speaking Scenarios** (`chin
 
 ### Next step
 
-**Phase 2 complete.** Start with **Phase 3.4** (`GET /api/classes/[classId]/scenarios?topic=...`). Build in order; reuse `assertClassAccess`, `TOPICS`, `Scenario`, and `isScenarioLevel`.
+**Phase 2 complete.** Start with **Phase 3.5** (teacher create-scenario form on `/classes/[id]`). Build in order; reuse `assertClassAccess`, `TOPICS`, `Scenario`, and `isScenarioLevel`.
 
 ---
 
@@ -79,7 +79,7 @@ Work through these in order. Check **Done?** when it works end-to-end.
 | **3.1** | **`Scenario` model** — e.g. `classId` (ref `Class`), `topicId` (string matching `TopicId` from `topics.ts`), `level` (enum), `promptEnglish` (string), optional `createdBy` (ref `User`). `timestamps`. Index on `(classId, topicId)` for fast filtering. | Resource **belongs to a class**; store stable **topic id**, show **label** in UI. | Done |
 | **3.2** | **Level constants** — e.g. `SCENARIO_LEVELS` in `lib/scenarioLevels.ts` (or enum on schema): `"1"` \| `"2"` \| `"3"` or `beginner` \| `intermediate` \| `advanced`. Export type + `isScenarioLevel()`. | Allowed values / enums; same idea as `User.role` and `TopicId`. | Done |
 | **3.3** | **`POST /api/classes/[classId]/scenarios`** — Teacher only. `assertClassAccess` then require teacher (owner or `roleInClass === "teacher"`). Zod: `{ topicId, level, promptEnglish }`. Validate `topicId` with `isTopicId()`. `Scenario.create(...)`. Return `{ ok, scenario: { id, ... } }`. | Nested routes; reuse **access helper**; Zod + domain validation. | Done |
-| **3.4** | **`GET /api/classes/[classId]/scenarios?topic=daily_life`** — Any **class member** (`assertClassAccess`). `Scenario.find({ classId, topicId })`. Return `{ ok, scenarios: [...] }`. **400** if `topic` missing/invalid. | **Query params**; filter by topic; members read, teachers write. | |
+| **3.4** | **`GET /api/classes/[classId]/scenarios?topic=daily_life`** — Any **class member** (`assertClassAccess`). `Scenario.find({ classId, topicId })`. Return `{ ok, scenarios: [...] }`. **400** if `topic` missing/invalid. | **Query params**; filter by topic; members read, teachers write. | Done |
 | **3.5** | **Teacher UI — create scenario** — On `/classes/[id]`, if teacher: form with topic (select from `TOPICS`), level (select), English prompt (textarea). `fetch` → `POST` from 3.3. Success/error like create-class form. | Form → API; teacher-only block on class page. | |
 | **3.6** | **`TopicStrip` component** (client) — Horizontal pills from `TOPICS`. Click sets `selectedTopicId`; highlight active. Buttons (not static spans). Reuse home page styling. | Client state; controlled selection; reusable UI. | |
 | **3.7** | **`ScenarioList` component** (client) — When `classId` + `selectedTopicId` set, `fetch` `GET .../scenarios?topic=...`. Loading / error / empty (“No scenarios for this topic yet.”). **Cards** with prompt snippet + **level badge**. | `useEffect` + fetch; list UI; badges. | |

@@ -36,6 +36,60 @@ const createScenarioSchema = z.object({
 });
 
 /**
+ * Phase 3 Step 3.4: list scenarios in a class for a topic (class members only).
+ */
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, message: "You must be signed in." }, { status: 401 });
+    }
+
+    const { id: classId } = await context.params;
+    //https://example.com/api/scenarios?topic=food
+    const topic = new URL(request.url).searchParams.get("topic")?.trim() ?? "";
+    if (!topic || !isTopicId(topic)) {
+      return NextResponse.json(
+        { ok: false, message: "Query parameter ?topic= is required and must be a valid topic id." },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const access = await assertClassAccess(session.user.id, session.user.role, classId);
+    if (!access.ok) {
+      return NextResponse.json(
+        { ok: false, message: access.message },
+        { status: access.status }
+      );
+    }
+
+    const scenarios = await Scenario.find({
+      classId: new Types.ObjectId(classId),
+      topicId: topic,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const items = scenarios.map((s) => ({
+      id: String(s._id),
+      topicId: s.topicId,
+      level: s.level,
+      promptEnglish: s.promptEnglish,
+    }));
+
+    return NextResponse.json({ ok: true, scenarios: items });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("MONGODB_URI")) {
+      return NextResponse.json({ ok: false, message: error.message }, { status: 503 });
+    }
+    console.error("GET /api/classes/[id]/scenarios", error);
+    return NextResponse.json({ ok: false, message: "Server error. Try again later." }, { status: 500 });
+  }
+}
+
+/**
  * Phase 3 Step 3.3: teacher-only create scenario in a class.
  */
 export async function POST(request: Request, context: RouteContext) {
